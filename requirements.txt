@@ -1,9 +1,14 @@
 # Core dependencies
+fastapi==0.109.2
+uvicorn==0.27.1
 streamlit==1.32.0
+python-dotenv==1.0.1
+openai==1.12.0
+pydantic==2.6.1
+tiktoken==0.5.2
 langchain==0.1.9
 langchain-openai==0.0.5
-openai==1.12.0
-python-dotenv==1.0.1
+python-multipart==0.0.9
 
 # Vector database
 pinecone-client==3.0.2
@@ -11,11 +16,9 @@ pinecone-client==3.0.2
 # Data processing
 numpy==1.26.4
 pandas==2.2.1
-tiktoken==0.6.0
 
 # Utilities
 python-magic==0.4.27
-pydantic==2.6.1
 typing-extensions==4.9.0
 
 # Testing

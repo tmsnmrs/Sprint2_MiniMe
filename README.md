@@ -1,98 +1,62 @@
-# MiniMe - Dual-Purpose Interactive Marketing Assistant
+# Marketing Assistant API
 
-MiniMe is a specialized chatbot that combines marketing task execution with educational components, helping users both accomplish marketing tasks and learn marketing concepts simultaneously.
+A FastAPI-based backend service for a marketing assistant application that helps with various marketing tasks.
 
 ## Features
 
-- **Marketing Task Execution**
-  - Brand Analysis
-  - Value Proposition Formulation
-  - Target Audience Identification
-  - Creative Concept Generation & Copywriting
-  - Task-Specific Function Calling
+- Chat-based interface for marketing tasks
+- Task-specific prompts and guidance
+- Conversation history management
+- Support for multiple marketing tasks:
+  - Content Calendar Creation
+  - Email Campaign Design
+  - Social Media Ad Creation
+  - Competitor Analysis
 
-- **Educational Component**
-  - Pre-Task Explanations
-  - Process Walkthroughs
-  - Post-Task Summaries
-  - Contextual Learning Prompts
+## Setup
 
-## Technical Stack
-
-- **Frontend**: Streamlit
-- **Backend**: Python
-- **AI/ML**: LangChain, OpenAI
-- **Vector Database**: Pinecone
-- **Version Control**: Git
-
-## Project Structure
-
-```
-minime/
-├── app/                    # Streamlit application
-│   ├── pages/             # Streamlit pages
-│   ├── components/        # Reusable UI components
-│   └── utils/             # Utility functions
-├── backend/               # Core application logic
-│   ├── rag/              # RAG implementation
-│   ├── functions/        # Marketing task functions
-│   └── models/           # Data models
-├── data/                  # Data and knowledge base
-│   ├── raw/              # Raw marketing content
-│   └── processed/        # Processed and vectorized content
-├── tests/                 # Test suite
-├── config/                # Configuration files
-└── docs/                  # Documentation
-```
-
-## Setup Instructions
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/minime.git
-   cd minime
-   ```
-
-2. Create and activate a virtual environment:
+1. Clone the repository
+2. Create a virtual environment:
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
-
 3. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-
-4. Set up environment variables:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your API keys
+4. Create a `.env` file with your OpenAI API key:
    ```
-
+   OPENAI_API_KEY=your_api_key_here
+   ```
 5. Run the application:
    ```bash
-   streamlit run app/main.py
+   uvicorn app.main:app --reload
    ```
 
-## Development Workflow
+## API Endpoints
 
-This project follows a sprint-based development approach with dedicated branches for each milestone:
+- `GET /`: Welcome message
+- `POST /chat`: Send a message and get a response
+- `GET /tasks`: List all available marketing tasks
+- `GET /tasks/{task_id}`: Get details of a specific task
 
-1. `main` - Production-ready code
-2. `sprint-ui-prototype` - UI development
-3. `sprint-rag-integration` - RAG implementation
-4. `sprint-function-calling` - Marketing task functions
-5. `sprint-educational-integration` - Educational content
-6. `sprint-backend-robustness` - Backend improvements
-7. `sprint-final-integration` - Final integration
+## Development
 
-## Contributing
+The project structure is organized as follows:
 
-1. Create a new branch for your feature
-2. Make your changes
-3. Submit a pull request
+- `app/`: Main application package
+  - `main.py`: FastAPI application setup
+  - `backend.py`: Chat management and response generation
+  - `handlers/`: Task-specific handlers
+    - `task_handlers.py`: Marketing task definitions and prompts
+  - `models/`: Data models
+    - `chat.py`: Chat-related data models
+    - `tasks.py`: Task-related data models
+  - `routes/`: API routes
+    - `chat.py`: Chat-related endpoints
+    - `tasks.py`: Task-related endpoints
 
 ## License
 
-MIT License 
+MIT 
