@@ -1,24 +1,10 @@
 import os
 import sys
-import streamlit.web.cli as stcli
+from pathlib import Path
 
-def main():
-    # Get the absolute path to the directory containing this script
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    # Add the script directory to the Python path
-    sys.path.insert(0, script_dir)
-    
-    # Set up the command line arguments for Streamlit
-    sys.argv = [
-        "streamlit",
-        "run",
-        os.path.join(script_dir, "app", "main.py"),
-        "--global.developmentMode=false",
-    ]
-    
-    # Run Streamlit
-    sys.exit(stcli.main())
+# Add the project root directory to Python path
+project_root = Path(__file__).parent.absolute()
+sys.path.insert(0, str(project_root))  # Changed from append to insert to give it priority
 
 if __name__ == "__main__":
-    main() 
+    os.system(f"PYTHONPATH={project_root} streamlit run {project_root}/app/main.py") 

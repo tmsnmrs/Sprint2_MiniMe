@@ -1,19 +1,32 @@
 import streamlit as st
+from app.backend import ChatManager
+from datetime import datetime
 
 # Initialize session states
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "current_task" not in st.session_state:
     st.session_state.current_task = None
+if "chat_manager" not in st.session_state:
+    st.session_state.chat_manager = ChatManager()
 
 def handle_task_click(task_id: str, task_title: str):
     """Handle task selection and update session state"""
+    # Update the current task in both session state and chat manager
     st.session_state.current_task = task_id
+    st.session_state.chat_manager.set_current_task(task_id)
+    
+    # Get response from chat manager
+    response = st.session_state.chat_manager.get_response("", task_id)
+    
+    # Update session state with the response
     st.session_state.messages.append({
         "role": "assistant",
-        "content": f"Selected task: {task_title}. How can I help you with this?"
+        "content": response.content,
+        "message_id": response.message_id,
+        "timestamp": response.timestamp,
+        "task_id": response.task_id
     })
-    st.rerun()
 
 # Page config
 st.set_page_config(
@@ -28,13 +41,14 @@ st.markdown("""
     <style>
         .stApp {
             background-color: #0E1117;
+            padding-left: 25px;  /* Add consistent left padding */
         }
         .intro-section {
-            padding: 1rem 0 2rem 0;  /* Reduced top padding */
-            margin: 0.5rem 3rem 2rem 3rem;  /* Adjusted margins */
+            padding: 1rem 0 2rem 0;
+            margin: 0.5rem 2rem 3rem 0;  /* Adjusted margins */
         }
         .main-content {
-            margin-left: 3rem;  /* Match intro section margin */
+            padding-top: 25px;  /* Space from intro section */
         }
         .section-title {
             font-size: 2.5rem;
@@ -52,58 +66,57 @@ st.markdown("""
             font-size: 1rem;
             margin-bottom: 1.5rem;
         }
-        .task-card {
-            background-color: #1A1C23;
-            padding: 1.5rem;  /* Increased padding */
-            border-radius: 0.5rem;
-            height: 180px;  /* Increased height */
-            margin: 1rem auto;  /* Increased vertical margin */
-            width: 85%;
-            transition: background-color 0.2s ease;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+        /* Button styling to look like a card */
+        div[data-testid="stButton"] {
+            margin: 0.5rem 0;
+            height: 180px !important;  /* Fixed height for container */
         }
-        .task-card:hover {
-            background-color: #262730;
+        div[data-testid="stButton"] > button {
+            width: 100% !important;
+            height: 180px !important;  /* Fixed height for button */
+            background-color: #1A1C23 !important;
+            border: 2px solid transparent !important;
+            border-radius: 0.5rem !important;
+            padding: 1.5rem !important;
+            transition: all 0.3s ease !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-start !important;
+            text-align: left !important;
+            white-space: normal !important;
+            line-height: 1.5 !important;
+            box-sizing: border-box !important;
         }
-        .task-card h3 {
-            color: #FAFAFA;
-            font-size: 1.1rem;
-            margin-bottom: 0.75rem;  /* Increased margin */
-            font-weight: 500;
+        div[data-testid="stButton"] > button:hover {
+            background-color: #262730 !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        .task-card p {
-            color: #C6CCD7;
-            font-size: 0.9rem;
-            margin: 0;
-            line-height: 1.4;  /* Improved readability */
+        div[data-testid="stButton"] > button.selected {
+            border-color: #00CC66 !important;
+            background-color: #1E2128 !important;
+            box-shadow: 0 0 0 2px #00CC66, 0 4px 6px rgba(0, 0, 0, 0.1) !important;
         }
-        div[data-testid="stVerticalBlock"] > div:has(div.stMarkdown) {
-            gap: 0rem;
+        /* Text styling within buttons */
+        div[data-testid="stButton"] button strong {
+            display: block !important;
+            color: #FAFAFA !important;
+            font-size: 1.1rem !important;
+            margin-bottom: 0.75rem !important;
+            font-weight: 500 !important;
+            width: 100% !important;
         }
-        .chat-container {
-            height: calc(100vh - 400px);
-            overflow-y: auto;
-            padding-right: 1rem;
+        div[data-testid="stButton"] button p {
+            color: #C6CCD7 !important;
+            font-size: 0.9rem !important;
+            margin: 0 !important;
+            line-height: 1.4 !important;
+            flex-grow: 1 !important;
         }
-        .tasks-container {
-            height: calc(100vh - 400px);
-            overflow-y: auto;
-            padding-right: 1rem;
-        }
-        .vertical-divider {
-            border-left: 1px solid #FFFFFF;
-            height: 100%;
-            margin: 0 20px;
-            position: absolute;
-            top: 0;
-            bottom: 0;
-        }
-        .divider-container {
-            position: relative;
-            height: 100%;
+        /* Column layout adjustments */
+        [data-testid="column"] {
+            width: calc(33.33% - 1rem) !important;
+            padding: 0 0.5rem !important;
         }
         /* Hide Streamlit branding */
         #MainMenu {visibility: hidden;}
@@ -127,7 +140,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Welcome Section (Full Width)
+# Welcome Section
 st.markdown('<div class="intro-section">', unsafe_allow_html=True)
 st.markdown('<h1 class="section-title">MiniMe</h1>', unsafe_allow_html=True)
 st.markdown(
@@ -142,6 +155,9 @@ tasks_col, divider_col, chat_col = st.columns([1, 0.05, 1])
 
 # Left column - Marketing Tasks
 with tasks_col:
+    # Debug information
+    st.markdown(f"<div style='color: #666; font-size: 0.8rem;'>Debug: Current task = {st.session_state.current_task}</div>", unsafe_allow_html=True)
+    
     st.markdown('<div class="main-content">', unsafe_allow_html=True)
     st.markdown('<h1 class="section-title">Marketing Tasks</h1>', unsafe_allow_html=True)
     st.markdown(
@@ -169,26 +185,15 @@ with tasks_col:
     # Render task cards
     for task_id, title, description, col in tasks:
         with col:
-            st.markdown(
-                f"""
-                <div class="task-card" onclick="window.parent.postMessage({{event: 'task_click', task_id: '{task_id}', task_title: '{title}'}}, '*')">
-                    <h3>{title}</h3>
-                    <p>{description}</p>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            if st.button(
+                f"**{title}**\n\n{description}",
+                key=f"task_{task_id}",
+                use_container_width=True,
+                help=f"Click to start working on: {title}"
+            ):
+                handle_task_click(task_id, title)
+                st.rerun()
 
-    # JavaScript to handle task clicks
-    st.markdown("""
-        <script>
-            window.addEventListener('message', function(e) {
-                if (e.data.event === 'task_click') {
-                    window.parent.document.querySelector('button[data-testid="baseButton-secondary"]').click();
-                }
-            });
-        </script>
-    """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Vertical Divider
@@ -211,14 +216,28 @@ with chat_col:
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
+                # Display message metadata in small text if in debug mode
+                if st.session_state.get("debug_mode", False):
+                    st.markdown(
+                        f"<div style='color: #666; font-size: 0.7rem;'>"
+                        f"ID: {message.get('message_id', 'N/A')} | "
+                        f"Task: {message.get('task_id', 'N/A')} | "
+                        f"Time: {message.get('timestamp', 'N/A')}"
+                        f"</div>",
+                        unsafe_allow_html=True
+                    )
 
         # Add initial message if no messages exist
         if not st.session_state.messages:
             with st.chat_message("assistant"):
-                st.markdown("Hi! I'm MiniMe, your marketing assistant. How can I help you today?")
+                welcome_message = "Hi! I'm MiniMe, your marketing assistant. How can I help you today?"
+                st.markdown(welcome_message)
                 st.session_state.messages.append({
                     "role": "assistant",
-                    "content": "Hi! I'm MiniMe, your marketing assistant. How can I help you today?"
+                    "content": welcome_message,
+                    "message_id": f"msg_{int(datetime.now().timestamp())}",
+                    "timestamp": datetime.now(),
+                    "task_id": None
                 })
 
         # Chat input
@@ -229,12 +248,24 @@ with chat_col:
 
         if prompt:
             # Add user message to chat history
-            st.session_state.messages.append({"role": "user", "content": prompt})
+            st.session_state.messages.append({
+                "role": "user",
+                "content": prompt,
+                "message_id": f"msg_{int(datetime.now().timestamp())}",
+                "timestamp": datetime.now(),
+                "task_id": st.session_state.current_task
+            })
             
-            # For now, just echo the message back
+            # Get response from chat manager
+            response = st.session_state.chat_manager.get_response(prompt)
+            
+            # Add assistant's response to chat history
             st.session_state.messages.append({
                 "role": "assistant",
-                "content": f"You said: {prompt}"
+                "content": response.content,
+                "message_id": response.message_id,
+                "timestamp": response.timestamp,
+                "task_id": response.task_id
             })
             st.rerun()
 

@@ -1,3 +1,3 @@
 """
-Task handlers for the Marketing Assistant
+Marketing task handlers package.
 """ 
